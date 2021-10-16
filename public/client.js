@@ -118,12 +118,12 @@ function onclickButton_SendOfferSDP() {
 //Socket.IO関連の関数
 
 function createPeerConnection(stream) {
-    // let config = {"iceServers": []};
+    //let config = {"iceServers": []};
     let config = {
         "iceServers": [
-            {"urls": "stun:stun.|.google.com:19302"},
-            {"urls": "stun:stun1.|.google.com:19302"},
-            {"urls": "stun:stun2.|.google.com:19302"},
+            {"urls": "stun:stun.l.google.com:19302"},
+            {"urls": "stun:stun1.l.google.com:19302"},
+            {"urls": "stun:stun2.l.google.com:19302"},
         ]
     };
     let rtcPeerConnection = new RTCPeerConnection(config);
