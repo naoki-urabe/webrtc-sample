@@ -62,13 +62,13 @@ function onclickCheckbox_CameraMicrophone() {
     .then((stream) => {
         console.log("Call : setStreamToElement(Video_Local, stream)");
         setStreamToElement(g_elementVideoLocal, stream)
-        .catch((error) => {
+        /*.catch((error) => {
             console.error("Error : ", error);
             alert("Could not start Camera");
             g_elementCheckboxCamera.checked = false;
             g_elementCheckboxMicrophone.checked = false;
             return;
-        })
+        })*/
     })
 }
 
