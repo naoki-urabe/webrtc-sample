@@ -1,18 +1,19 @@
 "use strict";
+//グローバル変数
 const g_elementCheckboxCamera = document.getElementById("checkbox_camera");
 const g_elementCheckboxMicrophone = document.getElementById("checkbox_microphone");
 const g_elementVideoLocal = document.getElementById("video_local")
-const g_elementTextareaOfferSideOfferSDP = document.getElementById("textarea_offerside_offsersdp");
+/*const g_elementTextareaOfferSideOfferSDP = document.getElementById("textarea_offerside_offsersdp");
 const g_elementTextareaAnswerSideOfferSDP = document.getElementById("textarea_answerside_offsersdp");
 const g_elementTextareaOfferSideAnswerSDP = document.getElementById("textarea_offerside_answersdp");
-const g_elementTextareaAnswerSideAnswerSDP = document.getElementById("textarea_answerside_answersdp");
+const g_elementTextareaAnswerSideAnswerSDP = document.getElementById("textarea_answerside_answersdp");*/
 const g_elementVideoRemote = document.getElementById("video_remote");
 const g_elementAudioRemote = document.getElementById("audio_remote");
-
+const g_socket = io.connect();
 
 let g_rtcPeerConnection = null;
 
-
+//UIから呼ばれる関数
 function onclickCheckbox_CameraMicrophone() {
     console.log("UI Event : Camera/Microphone checkbox clicked.");
     let trackCamera_old = null;
@@ -102,8 +103,29 @@ function onclickButton_SetAnswerSDPthenChatStarts() {
     setOfferSDP_and_createAnswerSDP(g_rtcPeerConnection,sessionDescription)
 }
 
+function onclickButton_SendOfferSDP() {
+    console.log(" UI Event : 'Send OfferSDP.' button clicked.");
+    if(g_rtcPeerConnection) {
+        alert("Connection object already exists");
+        return;
+    }
+    console.log("Call : createPeerConnection()");
+    let rtcPeerConnection = createPeerConnection(g_elementVideoLocal.srcObject);
+    g_rtcPeerConnection = rtcPeerConnection;
+    createOfferSDP(rtcPeerConnection);
+}
+
+//Socket.IO関連の関数
+
 function createPeerConnection(stream) {
-    let config = {"iceServers": []};
+    // let config = {"iceServers": []};
+    let config = {
+        "iceServers": [
+            {"urls": "stun:stun.|.google.com:19302"},
+            {"urls": "stun:stun1.|.google.com:19302"},
+            {"urls": "stun:stun2.|.google.com:19302"},
+        ]
+    };
     let rtcPeerConnection = new RTCPeerConnection(config);
     setupRTCPeerConnectionEventHandler(rtcPeerConnection);
     if(stream) {
@@ -143,18 +165,24 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
             if( "offer" === rtcPeerConnection.localDescription.type )
             {
                 // Offer側のOfferSDP用のテキストエリアに貼付
-                console.log( "- Set OfferSDP in textarea" );
-                g_elementTextareaOfferSideOfferSDP.value = rtcPeerConnection.localDescription.sdp;
-                g_elementTextareaOfferSideOfferSDP.focus();
-                g_elementTextareaOfferSideOfferSDP.select();
+                //console.log( "- Set OfferSDP in textarea" );
+                //g_elementTextareaOfferSideOfferSDP.value = rtcPeerConnection.localDescription.sdp;
+                //g_elementTextareaOfferSideOfferSDP.focus();
+                //g_elementTextareaOfferSideOfferSDP.select();
+                console.log("- Send OfferSDP to server");
+                g_socket.emit("signaling", {type: "offer", data: rtcPeerConnection.localDescription})   
             }
             else if( "answer" === rtcPeerConnection.localDescription.type )
             {
                 // Answer側のAnswerSDP用のテキストエリアに貼付
-                console.log( "- Set AnswerSDP in textarea" );
-                g_elementTextareaAnswerSideAnswerSDP.value = rtcPeerConnection.localDescription.sdp;
-                g_elementTextareaAnswerSideAnswerSDP.focus();
-                g_elementTextareaAnswerSideAnswerSDP.select();
+                //console.log( "- Set AnswerSDP in textarea" );
+                //g_elementTextareaAnswerSideAnswerSDP.value = rtcPeerConnection.localDescription.sdp;
+                //g_elementTextareaAnswerSideAnswerSDP.focus();
+                //g_elementTextareaAnswerSideAnswerSDP.select();
+                console.log("- Send AnswerSDP to server");
+                console.log("before");
+                g_socket.emit("signaling", {type: "answer", data: rtcPeerConnection.localDescription})
+                console.log("after");
             }
             else
             {
@@ -208,7 +236,7 @@ function setStreamToElement(elementMedia, stream) {
         console.error("Unexpected : Unknown ElementTagName : ", elementMedia.tagName);
     }
 }
-
+//DataChannel関連の関数
 function createOfferSDP(rtcPeerConnection) {
     console.log("Call: rtcPeerConnection.createOffer()");
     rtcPeerConnection.createOffer()
@@ -257,3 +285,41 @@ function setOfferSDP_and_createAnswerSDP(rtcPeerConnection, sessionDescription) 
         console.error("error")
     })
 }
+
+g_socket.on(
+    "connect",
+    () => {
+        console.log("Socket Event : connect");
+    }
+);
+
+g_socket.on(
+    "signaling",
+    (objData) => {
+        console.log("Socket Event : signaling");
+        console.log("- type : ", objData.type);
+        console.log("- data : ", objData.data);
+
+        if("offer" === objData.type) {
+            if(g_rtcPeerConnection) {
+                alert("Connection object already exists.");
+                return;
+            }
+            console.log("Call : cratePeerConnection()");
+            let rtcPeerConnection = createPeerConnection(g_elementVideoLocal.srcObject);
+            g_rtcPeerConnection = rtcPeerConnection;
+            console.log("Call : setOfferSDP_and_createAnswerSDP()");
+            setOfferSDP_and_createAnswerSDP(rtcPeerConnection, objData.data);
+        } else if ("answer" === objData.type) {
+            if(!g_rtcPeerConnection) {
+                alert("Connection object does not exist.");
+                return;
+            }
+            console.log("Call : setAnswerSDP()");
+            setOfferSDP_and_createAnswerSDP(g_rtcPeerConnection, objData.data);
+        } else {
+            console.error("Unexpected : Socket Event : signaling");
+        }
+
+    }
+)

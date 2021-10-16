@@ -14,10 +14,9 @@
         <input type="checkbox" id="checkbox_camera" onclick ="onclickCheckbox_CameraMicrophone()">Camera
         <input type="checkbox" id="checkbox_microphone" onclick="onclickCheckbox_CameraMicrophone()">Microphone
         <br />
-        <video id="video_local" width="320" height="240" style="border: 1px solid blank;" autoplay></video>
-        <video id="video_remote" width="320" height="240" ; border: `px solid black; autoplay></video><audio id="audio_remote" autoplay></audio>
-        
-    </body>
+        <video id="video_local" width="320" height="240" style="border: 1px solid black;" autoplay></video><audio id="audio_local" autoplay></audio>
+        <video id="video_remote" width="320" height="240" style="border: 1px solid black;" autoplay></video><audio id="audio_remote" autoplay></audio>
+    <!--
     <table border="1">
         <tbody>
             <tr>
@@ -52,6 +51,11 @@
             </tr>
         </tbody>
     </table>
+-->
+<br />
+<button onclick="onclickButton_SendOfferSDP()">Send OfferSDP.</button>
     <!-- Script -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="./client.js"></script>
+</body>
 </html>
